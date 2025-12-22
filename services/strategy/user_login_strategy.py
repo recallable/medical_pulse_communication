@@ -1,3 +1,4 @@
+import hashlib
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 from urllib.parse import quote
@@ -73,10 +74,13 @@ class AccountLoginStrategy(LoginStrategy):
         user = await user_crud.get_by_username(login_data.username)
 
         if not user:
-            raise BusinessException(message="用户名或密码错误", code=400)
+            # 2. 尝试手机号登录
+            user = await user_crud.get_by_phone(login_data.username)
+            if not user:
+                raise BusinessException(message="用户名或密码错误", code=400)
 
-        # 2. 验证密码
-        if not PasswordUtil.verify_password(login_data.password, user.password):
+        # 3. 验证密码
+        if not hashlib.sha256(login_data.password.encode()).hexdigest() == user.password:
             raise BusinessException(message="用户名或密码错误", code=400)
 
         return user
