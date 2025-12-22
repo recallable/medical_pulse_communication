@@ -1,8 +1,23 @@
-from typing import Type, TypeVar
-from fastapi import Request, Depends
+from typing import Type, TypeVar, AsyncGenerator
+
+import redis.asyncio as aioredis
+from fastapi import Request
+
+from core.redis_client import redis_client_manager
 from middleware.exception import BusinessException
+from services.base import BaseService
 
 T = TypeVar("T")
+
+async def get_redis_client() -> AsyncGenerator[aioredis.Redis, None]:
+    """
+    依赖注入：获取 Redis 客户端实例
+    """
+    client = redis_client_manager.get_client()
+    try:
+        yield client
+    finally:
+        await client.close()
 
 def get_service(service_type: Type[T]) -> T:
     """

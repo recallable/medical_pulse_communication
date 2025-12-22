@@ -12,17 +12,21 @@ class Settings(BaseSettings):
     minio_secure: bool = False
     minio_bucket: str = "default"
     secret_key: str = "your-secret-key-here"  # JWT 密钥，生产环境请修改
-    algorithm: str = "HS256"                  # JWT 算法
-    access_token_expire_minutes: int = 30     # Token 过期时间
+    algorithm: str = "HS256"  # JWT 算法
+    access_token_expire_minutes: int = 30  # Token 过期时间
     rong_lian_acc_id: str = '2c94811c9860a9c4019a0adbdb5e3ece'
     rong_lian_acc_token: str = '904da2c0751f444ca891743d9abf3be5'
     rong_lian_app_id: str = '2c94811c9860a9c4019a0adbdceb3ed5'
+    dingtalk_client_id: str = 'dingafymrinlfauc6vpw'
+    dingtalk_client_secret: str = 'EtZi9mcq59x-C42nwMugfzLxHQe1TrTeTNFhV98rH1jlacnhX-ByIDKA7e2WW_Vk'
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property
     def tortoise_config(self) -> dict:
         return {
             "connections": {"default": self.database_url},
+            "use_tz": True,
+            "timezone": "Asia/Shanghai",
             "apps": {
                 "models": {
                     "models": ["models", "aerich.models"],

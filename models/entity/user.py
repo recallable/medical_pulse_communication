@@ -1,4 +1,5 @@
-from tortoise import fields, models
+from tortoise import fields, models, timezone
+
 
 class User(models.Model):
     """
@@ -25,15 +26,16 @@ class User(models.Model):
     # 是否删除（true-已删除 false-未删除，默认False）
     is_deleted = fields.BooleanField(default=False, description="是否删除（true-已删除 false-未删除）")
     # 创建时间（默认当前时间）
-    created_time = fields.DatetimeField(auto_now_add=True, description="创建时间")
+    created_time = fields.DatetimeField(auto_now_add=True, default=timezone.now,description="创建时间")
     # 更新时间（自动更新，默认当前时间）
-    updated_time = fields.DatetimeField(auto_now=True, description="更新时间（自动更新）")
+    updated_time = fields.DatetimeField(auto_now=True,default=timezone.now, description="更新时间（自动更新）")
 
     class Meta:
         # 数据库表名（包含模式名）
         table = "user"
         # 数据库模式名（对应 PostgreSQL 的 schema）
         schema = "medical_pulse_communication"
+        table_description = "用户表"
         # 索引配置（可根据需求添加）
         # indexes = [
         #     # 手机号索引（登录常用，提高查询效率）
@@ -46,3 +48,38 @@ class User(models.Model):
         #     # 确保手机号唯一（如果业务要求）
         #     # ("phone",)
         # ]
+
+
+class UserThirdParty(models.Model):
+    """
+    用户第三方登录关联表
+    """
+    # 主键ID（自增大整数）
+    id = fields.BigIntField(pk=True, generated=True, description="主键ID")
+    # 关联用户ID（外键）
+    user = fields.ForeignKeyField(model_name="models.User", related_name="third_party_bindings", field_name="user_id", on_delete=fields.CASCADE, description="关联的用户ID（外键）")
+    # 第三方平台（如wechat/qq）
+    third_platform = fields.CharField(max_length=20, description="第三方平台（wechat/qq/github/alipay等）")
+    # 第三方openid（用户唯一标识）
+    third_openid = fields.CharField(max_length=100, description="第三方平台的用户唯一标识（openid）")
+    # 第三方unionid（跨应用唯一标识，可选）
+    third_unionid = fields.CharField(max_length=100, null=True, description="第三方平台的统一标识（unionid，跨应用）")
+    # 第三方访问令牌（可选）
+    access_token = fields.CharField(max_length=200, null=True, description="第三方访问令牌")
+    # 第三方刷新令牌（可选）
+    refresh_token = fields.CharField(max_length=200, null=True, description="第三方刷新令牌")
+    # 令牌过期时间（秒，可选）
+    expires_in = fields.IntField(null=True, description="令牌过期时间（秒）")
+    # 创建时间（默认当前时间）
+    created_time = fields.DatetimeField(auto_now_add=True,default=timezone.now, description="创建时间")
+    # 更新时间（自动更新）
+    updated_time = fields.DatetimeField(auto_now=True,default=timezone.now, description="更新时间")
+    # 是否删除（软删，默认未删除）
+    is_deleted = fields.BooleanField(default=False, description="是否删除（软删）")
+
+    class Meta:
+        # 数据库表名
+        table = "user_third_party"
+        schema = "medical_pulse_communication"
+        # 表注释
+        table_description = "用户第三方登录关联表"
