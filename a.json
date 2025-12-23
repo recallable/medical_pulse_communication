@@ -1,12 +1,62 @@
 {
-  'contentid': '236467',
-  'title': 'HER2 ADC药物的研发历程与临床应用进展',
-  'url': 'http://news.medlive.cn/all/info-news/show-236467_97.html',
-  'thumb': 'https://newsapi-cdn.medlive.cn/uploadfile/thumb/2025/1222/20251222121952755_jpg_h360',
-  'description': '近年来，靶向HER2的抗体偶联药物（ADC）蓬勃发展，为HER2阳性和HER2低表达晚期乳腺癌患者提供了新的治疗选择。因此，本文将系统梳理HER2 ADC药物的研发历史、作用机制以及其在晚期乳腺癌中的研究进展。',
-  'type': 'news',
-  'inputtime': 1766397600,
-  'comment_count': 55,
-  'format_time': '16小时前',
-  'content': '近年来，靶向HER2的抗体偶联药物（ADC）蓬勃发展，为HER2阳性和HER2低表达晚期乳腺癌患者提供了新的治疗选择。因此，本文将系统梳理HER2 ADC药物的研发历史、作用机制以及其在晚期乳腺癌中的研究进展。'
+  'idcard_number_type': 1,
+  'words_result': {
+    '姓名': {
+      'location': {
+        'top': 71,
+        'left': 101,
+        'width': 50,
+        'height': 18
+      },
+      'words': '王飞'
+    },
+    '民族': {
+      'location': {
+        'top': 107,
+        'left': 185,
+        'width': 16,
+        'height': 16
+      },
+      'words': '汉'
+    },
+    '住址': {
+      'location': {
+        'top': 171,
+        'left': 101,
+        'width': 152,
+        'height': 18
+      },
+      'words': '辽宁省大连市甘井子区'
+    },
+    '公民身份号码': {
+      'location': {
+        'top': 254,
+        'left': 165,
+        'width': 228,
+        'height': 19
+      },
+      'words': '522530199208180048'
+    },
+    '出生': {
+      'location': {
+        'top': 137,
+        'left': 103,
+        'width': 135,
+        'height': 17
+      },
+      'words': '19920818'
+    },
+    '性别': {
+      'location': {
+        'top': 106,
+        'left': 102,
+        'width': 14,
+        'height': 17
+      },
+      'words': '女'
+    }
+  },
+  'words_result_num': 6,
+  'image_status': 'normal',
+  'log_id': 2003437617457441307
 }

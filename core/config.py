@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     rong_lian_app_id: str = '2c94811c9860a9c4019a0adbdceb3ed5'
     dingtalk_client_id: str = 'dingafymrinlfauc6vpw'
     dingtalk_client_secret: str = 'EtZi9mcq59x-C42nwMugfzLxHQe1TrTeTNFhV98rH1jlacnhX-ByIDKA7e2WW_Vk'
+    baidu_ocr_app_key: str = 'XAyedW0rHJl6YjYQQ5IAf7KC'
+    baidu_ocr_secret_key: str = 'XvC5eNswoMBE6vQfvBLJavxuygL0iy4Z'
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property

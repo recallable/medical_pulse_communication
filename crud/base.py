@@ -15,9 +15,6 @@ class BaseCRUD(Generic[ModelType]):
         return await self.model.all()
 
     async def create(self, **kwargs) -> ModelType:
-        print(type(kwargs['uploader_id']))
-        print(type(kwargs['module']))
-        print(type(kwargs['source_file_size']))
         return await self.model.create(**kwargs)
 
     async def update(self, id: Any, obj_in: dict) -> Optional[ModelType]:

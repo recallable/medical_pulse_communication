@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from api.user.minio import minio_router
+from api.uploader.minio import minio_router
 from api.user.user import user_router
 
 api_router = APIRouter(prefix='/api')

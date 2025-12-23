@@ -37,7 +37,7 @@ async def upload(
     ext = os.path.splitext(file.filename)[1].lower().strip('.')
     if ext != kind.extension:
         # 特殊处理：jpeg 和 jpg 视为相同
-        if not (ext in ['jpg', 'jpeg'] and kind.extension in ['jpg', 'jpeg']):
+        if not (ext in ['jpg', 'jpeg', 'png'] and kind.extension in ['jpg', 'jpeg', 'png']):
             raise HTTPException(status_code=400,
                                 detail=f"文件扩展名与实际类型不匹配: 预期 {kind.extension}, 实际 {ext}")
 
