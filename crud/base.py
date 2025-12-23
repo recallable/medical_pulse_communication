@@ -1,4 +1,5 @@
 from typing import TypeVar, Type, Generic, List, Optional, Any
+
 from tortoise.models import Model
 
 ModelType = TypeVar("ModelType", bound=Model)
@@ -13,8 +14,11 @@ class BaseCRUD(Generic[ModelType]):
     async def get_all(self) -> List[ModelType]:
         return await self.model.all()
 
-    async def create(self, obj_in: dict) -> ModelType:
-        return await self.model.create(**obj_in)
+    async def create(self, **kwargs) -> ModelType:
+        print(type(kwargs['uploader_id']))
+        print(type(kwargs['module']))
+        print(type(kwargs['source_file_size']))
+        return await self.model.create(**kwargs)
 
     async def update(self, id: Any, obj_in: dict) -> Optional[ModelType]:
         obj = await self.get(id)

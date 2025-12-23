@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -31,5 +30,6 @@ register_authentication_middleware(app)
 register_tortoise(
     app,
     config=settings.tortoise_config,
+    generate_schemas=True,
     add_exception_handlers=True,
 )
