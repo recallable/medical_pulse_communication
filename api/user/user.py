@@ -1,7 +1,6 @@
 from fastapi import APIRouter
-from fastapi.params import Query
 
-from models.schemas.user import UserLoginRequest
+from models.schemas.user import UserLoginRequest, UserLoginResponse
 from services.user import user_service
 from utils.response import APIResponse
 
