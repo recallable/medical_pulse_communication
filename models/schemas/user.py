@@ -13,18 +13,19 @@ class UserLoginRequest(BaseModel):
 
 
 class TokenData(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+    access_token: str = Field(..., description="访问令牌")
+    token_type: str = Field('bearer', description="令牌类型")
 
 
 class UserInfo(BaseModel):
-    id: int
-    username: str
-    phone: Optional[str] = None
-    is_active: bool
-    is_certified: bool
+    id: int = Field(..., description="用户ID")
+    username: str = Field(..., description="用户名")
+    phone: Optional[str] = Field(..., description="手机号")
+    is_active: bool = Field(..., description="用户状态")
+    is_certified: bool = Field(..., description="用户认证状态")
+    user_identity: int = Field(..., description="用户身份: 0-普通用户, 1-医师")
 
 
 class UserLoginResponse(BaseModel):
-    token: TokenData
-    user: UserInfo
+    token: TokenData = Field(..., description="用户登录凭证")
+    user: UserInfo = Field(..., description="用户信息")

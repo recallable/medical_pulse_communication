@@ -52,7 +52,8 @@ class UserService(BaseService[User]):
                 username=user.username,
                 phone=user.phone,
                 is_active=user.user_status == 1,
-                is_certified=user.identity
+                is_certified=user.identity,
+                user_identity=user.user_identity,
             )
         )
 
