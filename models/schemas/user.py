@@ -1,4 +1,5 @@
 from typing import Optional, Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -21,6 +22,7 @@ class UserInfo(BaseModel):
     username: str
     phone: Optional[str] = None
     is_active: bool
+    is_certified: bool
 
 
 class UserLoginResponse(BaseModel):

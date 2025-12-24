@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     minio_bucket: str = "default"
     secret_key: str = "your-secret-key-here"  # JWT 密钥，生产环境请修改
     algorithm: str = "HS256"  # JWT 算法
-    access_token_expire_minutes: int = 30  # Token 过期时间
+    access_token_expire_minutes: int = 60  # Token 过期时间
+    refresh_token_expire_minutes: int = 60 * 24 * 7  # Token 过期时间
     rong_lian_acc_id: str = '2c94811c9860a9c4019a0adbdb5e3ece'
     rong_lian_acc_token: str = '904da2c0751f444ca891743d9abf3be5'
     rong_lian_app_id: str = '2c94811c9860a9c4019a0adbdceb3ed5'
