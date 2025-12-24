@@ -1,3 +1,4 @@
+from celery.result import AsyncResult
 from fastapi import APIRouter, UploadFile, Request, File as UploadFileParam
 
 from middleware.exception import BusinessException
@@ -24,8 +25,42 @@ async def uploader_ocr(
         request: Request,
         side: str = 'front',
         file: UploadFile = UploadFileParam(..., description="上传的文件"), ):
-    result = await user_service.uploader_ocr(request, side, file)
-    return APIResponse(data=result)
+    user_id = getattr(request.state, "user_id", None)
+
+    from core import celery_app
+    task = celery_app.baidu_ocr_task.apply_async((user_id, side, file,))
+    # result = await user_service.uploader_ocr(user_id, side, file)
+    return APIResponse(data={"task_id": task.id, 'message': '识别中...'})
+    # return APIResponse(data=result)
+
+
+@user_router.get('/identity/ocr/status/{task_id}')
+async def get_ocr_result(task_id: str):
+    # 通过 task_id 去 Redis 里查结果
+    from core.celery_app import celery_app
+    res = AsyncResult(task_id, app=celery_app)
+
+    # 1. 任务还在排队或处理中
+    if not res.ready():
+        return APIResponse(data={
+            "status": "PENDING",
+            "info": "正在识别中..."
+        })
+
+    # 2. 任务执行成功
+    if res.successful():
+        result_data = res.result  # 这里就是 baidu_ocr_task 返回的 return result
+        return APIResponse(data={
+            "status": "SUCCESS",
+            "data": result_data  # 包含姓名、身份证号等信息
+        })
+
+    # 3. 任务执行失败
+    else:
+        return APIResponse(code=500, message="识别失败", data={
+            "status": "FAILURE",
+            "error": str(res.result)
+        })
 
 
 @user_router.post('/certification')

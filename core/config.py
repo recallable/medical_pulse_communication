@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "on-site-repair"
+    app_name: str = "medical-pulse-communication"
     redis_url: str = "redis://localhost:6379/0"
     # Tortoise ORM 使用的 DSN 格式通常为 postgres://user:pass@host:port/db
     database_url: str = "postgres://postgres:121518@localhost:5432/postgres?schema=medical_pulse_communication"

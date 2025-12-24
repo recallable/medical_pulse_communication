@@ -1,15 +1,16 @@
 import base64
 
 import httpx
-from fastapi import UploadFile, Request
+from fastapi import UploadFile
 
 from core.config import settings
 from middleware.exception import BusinessException
 from models import File
 from models.entity.user import User
-from models.schemas.file import OCRResponse, OCRVo
+from models.schemas.file import OCRResponse, OCRVo, FileUploadDTO
 from models.schemas.user import UserLoginRequest, UserLoginResponse, UserInfo, TokenData
 from services.base import BaseService
+from services.minio_service import minio_service
 from services.strategy.user_login_strategy import LoginStrategyFactory
 from utils.jwt_utils import JWTUtil
 
@@ -57,27 +58,21 @@ class UserService(BaseService[User]):
             )
         )
 
-    async def uploader_ocr(self, request: Request, side: str, file: UploadFile) -> OCRResponse:
+    async def uploader_ocr(self, user_id: int, side: str, file: UploadFile) -> OCRResponse:
         """
         上传文件并进行 OCR 识别
         :param side: 身份证正反面 (front/back)
-        :param request: 请求对象
+        :param user_id: 用户id
         :param file: 上传的文件对象
         :return: OCR 识别结果
         """
         file_content = await file.read()
 
         # 1. 内部调用 MinIO 上传逻辑 (避免 HTTP 回环调用)
-        # 获取当前用户ID (需要从 request.state 中获取，由中间件设置)
-        user_id = getattr(request.state, "user_id", None)
         if not user_id:
             raise BusinessException(message="用户未登录", code=401)
 
         file_type = file.filename.split('.')[-1]
-
-        # 导入 MinIO Service
-        from services.minio_service import minio_service
-        from models.schemas.file import FileUploadDTO
 
         # 构造 DTO
         dto = FileUploadDTO(module=1)  # 1 代表 OCR 模块
