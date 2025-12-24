@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     app_name: str = "on-site-repair"
     redis_url: str = "redis://localhost:6379/0"
     # Tortoise ORM 使用的 DSN 格式通常为 postgres://user:pass@host:port/db
-    database_url: str = "postgres://postgres:121518@localhost:5432/postgres"
+    database_url: str = "postgres://postgres:121518@localhost:5432/postgres?schema=medical_pulse_communication"
     minio_endpoint: str = "localhost:9000"
     minio_access_key: str = "minioadmin"
     minio_secret_key: str = "minioadmin"

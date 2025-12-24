@@ -18,5 +18,5 @@ class File(models.Model):
 
     class Meta:
         table = "file"
-        schema = "medical_pulse_communication"
+        # schema = "medical_pulse_communication"
         table_description = "文件表"

@@ -29,26 +29,17 @@ class User(models.Model):
     created_time = fields.DatetimeField(auto_now_add=True, default=timezone.now,description="创建时间")
     # 更新时间（自动更新，默认当前时间）
     updated_time = fields.DatetimeField(auto_now=True,default=timezone.now, description="更新时间（自动更新）")
+    identity = fields.BooleanField(default=False, description="是否认证")
+    identity_card = fields.CharField(max_length=100, null=True, blank=True, description="身份证号")
+    id_card_front_id = fields.BigIntField(null=True, blank=True, description="身份证正面文件ID")
+    id_card_back_id = fields.BigIntField(null=True, blank=True, description="身份证反面文件ID")
 
     class Meta:
         # 数据库表名（包含模式名）
         table = "user"
         # 数据库模式名（对应 PostgreSQL 的 schema）
-        schema = "medical_pulse_communication"
+        # schema = "medical_pulse_communication"
         table_description = "用户表"
-        # 索引配置（可根据需求添加）
-        # indexes = [
-        #     # 手机号索引（登录常用，提高查询效率）
-        #     ("idx_user_phone", ["phone"]),
-        #     # 用户名索引
-        #     ("idx_user_username", ["username"]),
-        # ]
-        # # 唯一约束（可选，根据业务需求）
-        # unique_together = [
-        #     # 确保手机号唯一（如果业务要求）
-        #     # ("phone",)
-        # ]
-
 
 class UserThirdParty(models.Model):
     """
@@ -80,6 +71,6 @@ class UserThirdParty(models.Model):
     class Meta:
         # 数据库表名
         table = "user_third_party"
-        schema = "medical_pulse_communication"
+        # schema = "medical_pulse_communication"
         # 表注释
         table_description = "用户第三方登录关联表"
