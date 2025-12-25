@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
 from api.router import api_router
@@ -34,6 +35,13 @@ register_tortoise(
     add_exception_handlers=True,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 生产环境请改为具体的域名，如 ["http://localhost:8080"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if __name__ == '__main__':
     import uvicorn
