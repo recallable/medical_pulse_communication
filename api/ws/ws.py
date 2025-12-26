@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -33,7 +35,10 @@ async def websocket_endpoint(
         while True:
             data = await websocket.receive_text()
             await manager.send_personal_message(f"你发送了: {data}", websocket)
-            # await manager.broadcast(f"用户 #{client_id} 说: {data}")
+            data = json.loads(data)
+            to_user_id = data.get('to')
+            content = data.get('content')
+            await manager.send_to_user(to_user_id, content)
 
     except WebSocketDisconnect:
         # ✅ 修改点：传入 client_id 用于移除
