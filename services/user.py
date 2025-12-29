@@ -6,9 +6,9 @@ from fastapi import UploadFile
 from core.config import settings
 from middleware.exception import BusinessException
 from models import File
-from models.entity.user import User
+from models.entity.user import User, FriendshipBasic
 from models.schemas.file import OCRResponse, OCRVo, FileUploadDTO
-from models.schemas.user import UserLoginRequest, UserLoginResponse, UserInfo, TokenData
+from models.schemas.user import UserLoginRequest, UserLoginResponse, UserInfo, TokenData, UsershipsBasicResponse
 from services.base import BaseService
 from services.minio_service import minio_service
 from services.strategy.user_login_strategy import LoginStrategyFactory
@@ -214,6 +214,19 @@ class UserService(BaseService[User]):
         #     print(response)
 
         return UserInfo(id=user.id, username=user.username, phone=user.phone, is_active=user.user_status)
+
+    async def get_friendships(self, user_id: int):
+        """
+        获取用户好友关系
+        """
+        friendships = await FriendshipBasic.filter(user_id=user_id).all()
+        friends = [friendship.friend_id for friendship in friendships]
+        friends = await User.filter(id__in=friends).all()
+        result = [
+            UsershipsBasicResponse(friend_id=friendship.friend_id,friend_username=friend.username)
+            for friendship, friend in zip(friendships, friends)
+        ]
+        return result
 
 
 user_service = UserService()

@@ -1,4 +1,4 @@
 from models.entity.file import File
-from models.entity.user import User, UserThirdParty
+from models.entity.user import User, UserThirdParty, FriendshipBasic
 
-__all__ = ["User", "UserThirdParty", "File"]
+__all__ = ["User", "UserThirdParty", "File", "FriendshipBasic"]

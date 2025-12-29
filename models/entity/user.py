@@ -77,3 +77,25 @@ class UserThirdParty(models.Model):
         # schema = "medical_pulse_communication"
         # 表注释
         table_description = "用户第三方登录关联表"
+
+
+class FriendshipBasic(models.Model):
+    id = fields.BigIntField(pk=True, generated=True, description="主键ID")
+    # 关联用户ID（外键）
+    user = fields.ForeignKeyField(model_name="models.User", related_name="users", field_name="user_id",
+                                  on_delete=fields.CASCADE, description="关联的用户ID（外键）")
+    friend = fields.ForeignKeyField(model_name="models.User", related_name="friends", field_name="friend_id",
+                                    on_delete=fields.CASCADE, description="关联的用户ID（外键）")
+    # 创建时间（默认当前时间）
+    created_time = fields.DatetimeField(auto_now_add=True, default=timezone.now, description="创建时间")
+    # 更新时间（自动更新）
+    updated_time = fields.DatetimeField(auto_now=True, default=timezone.now, description="更新时间")
+    # 是否删除（软删，默认未删除）
+    is_deleted = fields.BooleanField(default=False, description="是否删除（软删）")
+
+    class Meta:
+        # 数据库表名
+        table = "friendship_basic"
+        # schema = "medical_pulse_communication"
+        # 表注释
+        table_description = "好友表"

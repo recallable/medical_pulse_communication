@@ -1,7 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from core.deps import validate_ws_token
@@ -38,29 +37,9 @@ async def websocket_endpoint(
             data = json.loads(data)
             to_user_id = data.get('to')
             content = data.get('content')
-            await manager.send_to_user(to_user_id, content)
+            await manager.send_to_user(to_user_id, json.dumps({"to": to_user_id, "content": content}))
 
     except WebSocketDisconnect:
         # ✅ 修改点：传入 client_id 用于移除
         manager.disconnect(str(client_id))
         await manager.broadcast(f"用户 #{client_id} 离开了聊天室")
-
-
-# 定义请求体模型
-class MessageSchema(BaseModel):
-    message: str
-
-
-@ws_router.post("/send/{client_id}")
-async def send_message_to_client(client_id: str, msg: MessageSchema):
-    """
-    HTTP 接口：给指定 client_id 推送消息
-    """
-    # 调用管理器的 send_to_user 方法
-    success = await manager.send_to_user(client_id, msg.message)
-
-    if not success:
-        # 如果用户不在线（不在 active_connections 里）
-        raise HTTPException(status_code=404, detail="User not connected")
-
-    return {"message": "Message sent", "client_id": client_id}

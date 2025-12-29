@@ -29,3 +29,10 @@ class UserInfo(BaseModel):
 class UserLoginResponse(BaseModel):
     token: TokenData = Field(..., description="用户登录凭证")
     user: UserInfo = Field(..., description="用户信息")
+
+
+class UsershipsBasicResponse(BaseModel):
+    # id: int = Field(..., description="用户关系ID")
+    # user_id: int = Field(..., description="用户ID")
+    friend_id: int = Field(..., description="好友ID")
+    friend_username: str = Field(..., description="好友用户名")

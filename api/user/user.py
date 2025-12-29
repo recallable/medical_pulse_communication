@@ -1,6 +1,7 @@
 from celery.result import AsyncResult
-from fastapi import APIRouter, UploadFile, Request, File as UploadFileParam
+from fastapi import APIRouter, UploadFile, Request, File as UploadFileParam, Depends
 
+from core.deps import get_current_user_id
 from middleware.exception import BusinessException
 from models.schemas.user import UserLoginRequest
 from services.user import user_service
@@ -74,4 +75,16 @@ async def certification(
     if not user_id:
         raise BusinessException(message="用户未登录", code=401)
     result = await user_service.certification(user_id)
+    return APIResponse.success(data=result)
+
+
+@user_router.get('/friendships')
+async def get_friendships(
+        user_id: int = Depends(get_current_user_id)
+):
+    """
+    获取用户好友列表
+    """
+
+    result = await user_service.get_friendships(user_id)
     return APIResponse.success(data=result)
