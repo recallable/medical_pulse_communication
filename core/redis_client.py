@@ -1,5 +1,7 @@
 import redis.asyncio as aioredis
+
 from core.config import settings
+
 
 class RedisClient:
     _pool: aioredis.ConnectionPool = None
@@ -11,7 +13,7 @@ class RedisClient:
                 settings.redis_url,
                 encoding="utf-8",
                 decode_responses=True,
-                max_connections=10
+                max_connections=100
             )
 
     @classmethod
