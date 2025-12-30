@@ -1,0 +1,195 @@
+import glob
+import os
+
+from langchain.chat_models import init_chat_model
+from langchain_community.embeddings import DashScopeEmbeddings
+from langchain_postgres import PGVector
+from langchain_text_splitters import MarkdownHeaderTextSplitter
+from llama_parse import LlamaParse, ResultType
+
+# ================= 1. 配置区域 =================
+# API Keys
+LLAMA_CLOUD_API_KEY = 'llx-aoa7Ko4Qc7VRuHooMqxWbOhRJZq3pHwNH67QlzL9gMOdYJPi'
+# 确保环境变量中有 DASHSCOPE_API_KEY，或者直接填在这里
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
+
+# 目录配置
+INPUT_DIR = "../docs"  # PDF 所在的根目录
+MD_OUTPUT_DIR = "../docs_markdown"  # 解析后的 Markdown 存放目录 (自动创建)
+
+# 数据库连接
+DB_CONNECTION = "postgresql+psycopg2://postgres:121518@localhost:5432/rag_db"
+COLLECTION_NAME = "h1n1_knowledge_base"
+
+# ================= 2. 初始化全局组件 =================
+# (这些组件只需要初始化一次，不需要在循环里反复创建)
+
+# 初始化 LlamaParse
+parser = LlamaParse(
+    result_type=ResultType.MD,
+    api_key=LLAMA_CLOUD_API_KEY,
+    language="ch_sim",
+    system_prompt="""
+    你是一个文档重构与转换专家。你的任务是将PDF内容转换为语义连贯、结构清晰的Markdown文档。
+    请严格执行以下“清洗-重构-格式化”三步流程：
+
+    1. 【第一步：去除噪音与修复分页（最高优先级）】
+       - **识别假标题（页眉噪音）**：文档中重复出现的“一、甲流简介”、“甲型H1N1流感医疗知识库”等通常是页眉。如果这些文本出现在段落中间，或者切断了子章节（如出现在“3.1 核心病因”和其正文之间），**必须将其视为噪音直接删除**，严禁保留为标题。
+       - **跨页语义合并**：当遇到子标题（如“3.1 核心病因”）后紧接页眉噪音时，请忽略页眉，将下一页的正文直接拼接到该子标题下方。确保“3.1”的内容不为空，保持语义连贯。
+       - **去除元数据**：严禁输出“**标题：**”、“**正文：**”、“”等标签；去除所有页码信息（如“PAGE 1”）。
+
+    2. 【第二步：建立标题层级】
+       - 仅对**真正的章节起始**应用标题格式：
+         - 中文数字开头的章节（如“一、甲流简介”）：使用一级标题 "# "。
+         - 数字编号的小节（如“2.1 病原学特征”）：使用二级标题 "## "。
+         - 其他加粗小标题：使用三级标题 "### "。
+
+    3. 【第三步：格式化内容】
+       - **表格**：必须将表格转换为标准的 Markdown 表格语法，确保数据不丢失。
+       - **正文**：保持段落完整，移除多余的换行符。
+
+    目标：输出一份可以直接用于RAG检索的纯净Markdown，不要包含任何解释性文字。
+    """
+)
+
+# 初始化切分器
+headers_to_split_on = [
+    ("#", "Chapter"),
+    ("##", "Section"),
+    ("###", "Subsection"),
+]
+markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on, strip_headers=False)
+
+# 初始化 Embeddings
+embeddings = DashScopeEmbeddings(model="text-embedding-v1", dashscope_api_key=DASHSCOPE_API_KEY)
+
+# 初始化 VectorStore
+vector_store = PGVector(
+    embeddings=embeddings,
+    collection_name=COLLECTION_NAME,
+    connection=DB_CONNECTION,
+    use_jsonb=True,
+)
+
+
+# ================= 3. 核心处理逻辑 =================
+
+def process_directory(directory_path):
+    # 1. 递归查找所有 .pdf 文件
+    # glob 模式 '**/*.pdf' 配合 recursive=True 可以穿透子目录
+    pdf_files = glob.glob(os.path.join(directory_path, "**/*.pdf"), recursive=True)
+
+    print(f"📂 扫描目录: {directory_path}")
+    print(f"📄 发现 PDF 文件数: {len(pdf_files)}")
+
+    # 确保输出目录存在
+    if not os.path.exists(MD_OUTPUT_DIR):
+        os.makedirs(MD_OUTPUT_DIR)
+
+    # 2. 循环处理每个文件
+    for index, pdf_path in enumerate(pdf_files):
+        try:
+            filename = os.path.basename(pdf_path)
+            print(f"\n[{index + 1}/{len(pdf_files)}] 🚀 正在处理: {filename}")
+
+            # --- A. 解析 PDF (LlamaParse) ---
+            documents = parser.load_data(pdf_path)
+            if not documents:
+                print(f"⚠️ 跳过: {filename} 解析结果为空")
+                continue
+
+            raw_markdown = "\n\n".join([doc.text for doc in documents])
+
+            # --- B. 保存 Markdown 备份 (可选) ---
+            # 保持文件名一致，只改后缀
+            md_filename = f"{os.path.splitext(filename)[0]}.md"
+            md_save_path = os.path.join(MD_OUTPUT_DIR, md_filename)
+
+            with open(md_save_path, "w", encoding="utf-8") as f:
+                f.write(raw_markdown)
+            print(f"   💾 Markdown 已保存至: {md_save_path}")
+
+            # --- C. 切分文本 ---
+            splits = markdown_splitter.split_text(raw_markdown)
+
+            # --- D. 注入元数据 (关键步骤！) ---
+            # 这一点非常重要：我们需要给每个切片打上标签，知道它来自哪个文件
+            for split in splits:
+                # 保留原有的标题元数据，并增加来源信息
+                split.metadata["source"] = filename
+                split.metadata["file_path"] = pdf_path
+
+            print(f"   ✂️ 切分得到 {len(splits)} 个片段")
+
+            # --- E. 向量化并存入数据库 ---
+            # 批量插入当前文件的所有切片
+            vector_store.add_documents(splits)
+            print(f"   ✅ {filename} 入库成功！")
+
+        except Exception as e:
+            # 捕获异常，防止一个文件报错导致整个程序停止
+            print(f"❌ 处理文件 {filename} 时发生错误: {e}")
+            continue
+
+
+def process_single_markdown(file_path):
+    """
+    读取单个 Markdown 文件并存入向量数据库
+    """
+    # 0. 检查文件是否存在
+    if not os.path.exists(file_path):
+        print(f"❌ 错误: 文件不存在 -> {file_path}")
+        return
+
+    try:
+        filename = os.path.basename(file_path)
+        print(f"\n🚀 正在处理单文件: {filename}")
+
+        # 1. 读取 Markdown 文件内容
+        with open(file_path, "r", encoding="utf-8") as f:
+            raw_markdown = f.read()
+
+        print(f"   📖 读取成功，字符数: {len(raw_markdown)}")
+
+        # 2. 切分文本 (复用全局定义的 markdown_splitter)
+        splits = markdown_splitter.split_text(raw_markdown)
+
+        # 3. 注入元数据 (关键步骤)
+        for split in splits:
+            # 记录来源，方便后续检索时溯源
+            split.metadata["source"] = filename
+            split.metadata["file_path"] = file_path
+
+        print(f"   ✂️ 切分得到 {len(splits)} 个片段")
+
+        # 4. 向量化并存入数据库 (复用全局定义的 vector_store)
+        if splits:
+            vector_store.add_documents(splits)
+            print(f"   ✅ {filename} 入库成功！")
+        else:
+            print(f"   ⚠️ 警告: 文件内容为空或未能切分出任何片段")
+
+    except Exception as e:
+        print(f"❌ 处理文件 {filename} 时发生错误: {e}")
+
+
+# ================= 4. 执行 =================
+if __name__ == "__main__":
+    # process_directory(INPUT_DIR)
+    # single_md_file = "../docs_markdown/儿童发热家庭护理手册.md"
+    # process_single_markdown(single_md_file)
+    query = '小孩发烧怎么办?'
+    results = vector_store.similarity_search(query, k=3)
+    for i, doc in enumerate(results):
+        print(f"   --- 结果 {i + 1} ---")
+        print(f"   [来源]: {doc.metadata.get('source', '未知')}")
+        print(f"   [内容]: {doc.page_content}")  # 只打印前100字预览
+
+    llm = init_chat_model(
+        model='qwen-flash',
+        model_provider='openai',
+        api_key=os.getenv('OPENAI_API_KEY'),
+    )
+    response = llm.invoke(f"评估一下召回率: 用户的问题:{query}, RAG检索的数据:{results}")
+    print(response.content)
+    print("\n🎉 所有任务处理完毕！")
