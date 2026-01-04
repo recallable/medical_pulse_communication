@@ -1,11 +1,15 @@
 import glob
 import os
+from typing import List
 
-from langchain.chat_models import init_chat_model
 from langchain_community.embeddings import DashScopeEmbeddings
+from langchain_core.documents import Document
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_postgres import PGVector
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 from llama_parse import LlamaParse, ResultType
+
+from core.ai import llm
 
 # ================= 1. 配置区域 =================
 # API Keys
@@ -173,23 +177,179 @@ def process_single_markdown(file_path):
         print(f"❌ 处理文件 {filename} 时发生错误: {e}")
 
 
+def chat(question: str):
+    """
+    AI 聊天接口 (融合三种 RAG 策略)
+    """
+
+    # ==================================================
+    # 3. 【策略二 & 三：多路扩展与分解】 (Expansion & Decomposition)
+    # 目的：生成多个搜索视角和子问题
+    # ==================================================
+    # 这一步会生成一个列表，例如 ["甲流治疗方案", "儿童甲流用药", "甲流发烧护理"]
+    queries_to_search = generate_multi_queries(question)
+    print(f"🚀 [策略2&3] 生成的搜索词: {queries_to_search}")
+
+    # ==================================================
+    # 4. 【并行向量检索 & 去重】 (Retrieval & Deduplication)
+    # 目的：拿着所有搜索词去库里找，并合并结果
+    # ==================================================
+    all_docs = []
+
+    # 遍历所有生成的查询词进行检索
+    # 注意：vector_store.similarity_search 是同步的，这里用循环
+    for q in queries_to_search:
+        # 这里的 k=2 可以小一点，因为我们搜了很多次，总量会很多
+        docs = vector_store.similarity_search(q, k=2)
+        all_docs.extend(docs)
+
+    # 【文档去重】：根据 page_content 去重，防止上下文重复
+    unique_docs = deduplicate_documents(all_docs)
+    print(f"📚 [最终] 检索到 {len(unique_docs)} 个不重复片段")
+
+    # 构建上下文
+    context_text = "\n\n".join([doc.page_content for doc in unique_docs])
+    messages = [
+        SystemMessage(content='你是一个Rag评估专家, 请根据用户的问题和RAG检索结果,评估一下召回率。'),
+        HumanMessage(content=f'用户的问题: {question}, RAG检索结果: {context_text}')
+    ]
+    response = llm.invoke(messages)
+    print(response.content)
+    # ==================================================
+    # 5. 生成最终回答
+    # ==================================================
+    rag_system_prompt = f"""
+        你是一个专业的医疗智能助手。请根据以下检索到的【参考信息】回答用户的问题。
+
+        回答原则：
+        1. 综合多条参考信息，逻辑清晰地回答。
+        2. 如果参考信息中没有答案，请明确告知，不要瞎编。
+        3. 语气亲切、专业。
+
+        【参考信息】:
+        {context_text}
+        """
+
+    final_messages = [
+        SystemMessage(content=rag_system_prompt),
+        HumanMessage(content=question)  # 给 LLM 看原始问题，保持对话流畅度
+    ]
+
+    response = llm.invoke(final_messages)
+
+    return response.content
+
+
+# -------------------------------------------------------------------------
+# 辅助方法区域
+# -------------------------------------------------------------------------
+
+def generate_multi_queries(original_query: str) -> List[str]:
+    """
+    【策略二 & 三实现】：多角度扩展 + 问题分解
+    """
+    prompt = """
+        你是一个AI搜索助手。为了更精准地回答用户的问题，请基于原始问题生成 3 个不同的搜索查询词。
+
+        生成规则：
+        1. **同义扩展**：包含相关的医学术语或别名（如"发烧"->"发热处理"）。
+        2. **问题拆解**：如果问题复杂，拆解为子问题（如"甲流乙流区别"->"甲流症状"和"乙流症状"）。
+        3. **保留原意**：必须包含原始问题的核心查询。
+
+        请直接输出 3 行查询词，每行一个，不要带序号或解释。
+
+        原始问题: {question}
+
+        禁止：
+            禁止修改用户原本的意思，比如：我嘴里面有点疼，怎么回事？禁止修改成：牙疼都有哪些症状？
+        """
+
+    messages = [SystemMessage(content=prompt.format(question=original_query))]
+
+    response = llm.invoke(messages)
+    content = response.content.strip()
+
+    # 解析结果，按行分割
+    queries = [q.strip() for q in content.split('\n') if q.strip()]
+
+    # 兜底：如果生成失败，至少保留原问题
+    if not queries:
+        return [original_query]
+
+    # 把原始问题也加进去，确保万无一失
+    if original_query not in queries:
+        queries.insert(0, original_query)
+
+    return queries[:4]  # 限制最多搜 4 次，防止太慢
+
+
+def deduplicate_documents(documents: List[Document]) -> List[Document]:
+    """
+    文档去重工具：根据 page_content 去重
+    """
+    unique_docs = []
+    seen_content = set()
+
+    for doc in documents:
+        # 取内容的前100个字符作为指纹，或者直接用整个content
+        content_fingerprint = doc.page_content.strip()
+
+        if content_fingerprint not in seen_content:
+            seen_content.add(content_fingerprint)
+            unique_docs.append(doc)
+
+    return unique_docs
+
+
 # ================= 4. 执行 =================
 if __name__ == "__main__":
     # process_directory(INPUT_DIR)
     # single_md_file = "../docs_markdown/儿童发热家庭护理手册.md"
-    # process_single_markdown(single_md_file)
-    query = '小孩发烧怎么办?'
-    results = vector_store.similarity_search(query, k=3)
-    for i, doc in enumerate(results):
-        print(f"   --- 结果 {i + 1} ---")
-        print(f"   [来源]: {doc.metadata.get('source', '未知')}")
-        print(f"   [内容]: {doc.page_content}")  # 只打印前100字预览
 
-    llm = init_chat_model(
-        model='qwen-flash',
-        model_provider='openai',
-        api_key=os.getenv('OPENAI_API_KEY'),
-    )
-    response = llm.invoke(f"评估一下召回率: 用户的问题:{query}, RAG检索的数据:{results}")
-    print(response.content)
-    print("\n🎉 所有任务处理完毕！")
+    # docs_markdown_list = [
+    #     '../docs_markdown/上呼吸道感染医疗知识库.md',
+    #     '../docs_markdown/下呼吸道感染医疗知识库.md',
+    #     '../docs_markdown/代谢综合征医疗知识库.md',
+    #     '../docs_markdown/关节疾病医疗知识库.md',
+    #     '../docs_markdown/内分泌与代谢性疾病医疗知识库.md',
+    #     '../docs_markdown/冠心病医疗知识库.md',
+    #     '../docs_markdown/尿路疾病医疗知识库.md',
+    #     '../docs_markdown/常见传染病医疗知识库.md',
+    #     '../docs_markdown/心力衰竭医疗知识库.md',
+    #     '../docs_markdown/心律失常医疗知识库.md',
+    #     '../docs_markdown/心血管系统疾病医疗知识库.md',
+    #     '../docs_markdown/慢性呼吸系统疾病医疗知识库.md',
+    #     '../docs_markdown/泌尿系统疾病医疗知识库.md',
+    #     '../docs_markdown/消化系统疾病医疗知识库.md',
+    #     '../docs_markdown/甲状腺疾病医疗知识库.md',
+    #     '../docs_markdown/神经系统疾病医疗知识库.md',
+    #     '../docs_markdown/神经退行性疾病医疗知识库.md',
+    #     '../docs_markdown/精神心理疾病医疗知识库.md',
+    #     '../docs_markdown/糖尿病医疗知识库.md',
+    #     '../docs_markdown/肝胆胰疾病医疗知识库.md',
+    #     '../docs_markdown/肾脏疾病医疗知识库.md',
+    #     '../docs_markdown/胃肠道疾病医疗知识库.md',
+    #     '../docs_markdown/脑血管疾病医疗知识库.md',
+    #     '../docs_markdown/骨骼疾病医疗知识库.md',
+    #     '../docs_markdown/骨骼肌肉系统疾病医疗知识库.md',
+    #     '../docs_markdown/高血压医疗知识库.md',
+    # ]
+    # for idx in trange(len(docs_markdown_list)):
+    #     process_single_markdown(docs_markdown_list[idx])
+    # process_single_markdown(single_md_file)
+    query = '怎么判断自己有没有精神病?'
+    chat(query)
+    # results = vector_store.similarity_search(query, k=3)
+    # for i, doc in enumerate(results):
+    #     print(f"   --- 结果 {i + 1} ---")
+    #     print(f"   [来源]: {doc.metadata.get('source', '未知')}")
+    #     print(f"   [内容]: {doc.page_content}")  # 只打印前100字预览
+    #
+    # llm = init_chat_model(
+    #     model='qwen-flash',
+    #     model_provider='openai',
+    #     api_key=os.getenv('OPENAI_API_KEY'),
+    # )
+    # response = llm.invoke(f"评估一下召回率: 用户的问题:{query}, RAG检索的数据:{results}")
+    # print(response.content)
+    # print("\n🎉 所有任务处理完毕！")
