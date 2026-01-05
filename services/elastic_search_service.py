@@ -1,7 +1,8 @@
 from elasticsearch import AsyncElasticsearch
 # 引入这两个核心类
-from elasticsearch.dsl import Search, Q
+from elasticsearch.dsl import Q
 
+from models.document.medical_record import MedicalRecordDoc
 from models.schemas.medical_record import SearchRequest
 
 
@@ -17,7 +18,7 @@ class AsyncMedicalSearchEngine:
         # ==========================================
         # 1. 使用 Search 对象作为"画板"
         # ==========================================
-        s = Search()
+        s = MedicalRecordDoc.search()
 
         # ==========================================
         # 2. 构建 Query (Must) - 关键词搜索
