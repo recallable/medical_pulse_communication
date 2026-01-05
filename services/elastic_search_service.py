@@ -43,7 +43,7 @@ class AsyncMedicalSearchEngine:
 
             # 精确匹配 Term
             if f.department:
-                s = s.filter("term", department=f.department)
+                s = s.filter("term", **{"department.keyword": f.department})
 
             if f.doctor_name:
                 s = s.filter("term", doctor_name=f.doctor_name)
@@ -108,7 +108,7 @@ class AsyncMedicalSearchEngine:
         return {
             "total": response["hits"]["total"]["value"],
             "took_ms": response["took"],
-            "data": results
+            "results": results
         }
 
 es  = AsyncMedicalSearchEngine()
