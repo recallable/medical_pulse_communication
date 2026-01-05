@@ -1,4 +1,4 @@
-from elasticsearch_dsl import Document, Text, Keyword, Integer, Date, Object, Boolean
+from elasticsearch.dsl import Document, Text, Keyword, Integer, Date, Object, Boolean
 
 
 class MedicalRecordDoc(Document):

@@ -1,6 +1,6 @@
 from elasticsearch import AsyncElasticsearch
 # 引入这两个核心类
-from elasticsearch_dsl import Search, Q
+from elasticsearch.dsl import Search, Q
 
 from models.schemas.medical_record import SearchRequest
 
