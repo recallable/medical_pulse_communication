@@ -6,18 +6,29 @@ from tortoise.contrib.fastapi import register_tortoise
 
 from api.router import api_router
 from core.config import settings
+from core.mongodb_client import mongodb_client_manager
+from core.rabbitmq_client import rabbitmq_client_manager
 from core.redis_client import redis_client_manager
 from middleware.authentication import register_authentication_middleware
 from middleware.exception import register_exception_middleware
 from middleware.logging import register_access_log_middleware
+from services.behavior_consumer import start_behavior_log_consumer
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动时初始化 Redis 连接池
     await redis_client_manager.init_pool()
+    # 初始化 MongoDB 连接
+    await mongodb_client_manager.init_client()
+    # 初始化 RabbitMQ 连接
+    await rabbitmq_client_manager.init_connection()
+    # 启动用户行为日志消费者
+    await start_behavior_log_consumer()
     yield
-    # 关闭时释放 Redis 连接池
+    # 关闭时释放连接
+    await rabbitmq_client_manager.close_connection()
+    await mongodb_client_manager.close_client()
     await redis_client_manager.close_pool()
 
 

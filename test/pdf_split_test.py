@@ -340,10 +340,10 @@ if __name__ == "__main__":
     query = '怎么判断自己有没有精神病?'
     chat(query)
     # results = vector_store.similarity_search(query, k=3)
-    # for i, doc in enumerate(results):
+    # for i, document in enumerate(results):
     #     print(f"   --- 结果 {i + 1} ---")
-    #     print(f"   [来源]: {doc.metadata.get('source', '未知')}")
-    #     print(f"   [内容]: {doc.page_content}")  # 只打印前100字预览
+    #     print(f"   [来源]: {document.metadata.get('source', '未知')}")
+    #     print(f"   [内容]: {document.page_content}")  # 只打印前100字预览
     #
     # llm = init_chat_model(
     #     model='qwen-flash',

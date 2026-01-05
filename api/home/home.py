@@ -8,6 +8,8 @@ from fastapi import APIRouter, HTTPException
 from core.redis_client import redis_client_manager
 from models.entity.article import Article
 from models.schemas.article import ArticleResponse, ArticleRequest
+from models.schemas.medical_record import SearchRequest
+from services.elastic_search_service import es
 from utils.response import APIResponse
 
 home_router = APIRouter(prefix="/home")
@@ -100,3 +102,8 @@ async def article_list(article_request: ArticleRequest):
         # 3. 如果等了 5 秒还没数据，说明 Leader 挂了或者数据库卡死了
         # 抛出异常或者返回空，坚决不查库
         raise HTTPException(status_code=503, detail="Server busy, please try again later")
+
+
+@home_router.get('/medical-record-list')
+async def medical_record_list(req: SearchRequest):
+    return await es.search(req)
