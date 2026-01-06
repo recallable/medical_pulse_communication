@@ -14,7 +14,12 @@ class UserLoginRequest(BaseModel):
 
 class TokenData(BaseModel):
     access_token: str = Field(..., description="访问令牌")
+    refresh_token: str = Field(..., description="刷新令牌")
     token_type: str = Field('bearer', description="令牌类型")
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str = Field(..., description="刷新令牌")
 
 
 class UserInfo(BaseModel):

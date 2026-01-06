@@ -1,14 +1,18 @@
 # jwt_util.py
-import jwt
 import datetime
 from typing import Dict, Any, Optional
+
+import jwt
+
 from core.config import settings
+
 
 class JWTUtil:
     # 从配置中读取
     SECRET_KEY = settings.secret_key
     ALGORITHM = settings.algorithm
     EXPIRE_MINUTES = settings.access_token_expire_minutes
+    REFRESH_EXPIRE_MINUTES = settings.refresh_token_expire_minutes
 
     @classmethod
     def create_token(cls, data: Dict[str, Any], expire_minutes: Optional[int] = None) -> str:
@@ -22,6 +26,11 @@ class JWTUtil:
             "iat": datetime.datetime.utcnow(),
         }
         return jwt.encode(payload, cls.SECRET_KEY, algorithm=cls.ALGORITHM)
+
+    @classmethod
+    def create_refresh_token(cls, data: Dict[str, Any]) -> str:
+        """生成 Refresh Token"""
+        return cls.create_token(data, expire_minutes=cls.REFRESH_EXPIRE_MINUTES)
 
     @classmethod
     def verify_token(cls, token: str) -> Optional[Dict[str, Any]]:

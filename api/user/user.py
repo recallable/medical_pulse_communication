@@ -3,11 +3,12 @@ from fastapi import APIRouter, UploadFile, Request, File as UploadFileParam, Dep
 
 from core.deps import get_current_user_id
 from middleware.exception import BusinessException
-from models.schemas.user import UserLoginRequest
+from models.schemas.user import UserLoginRequest, RefreshTokenRequest
 from services.user import user_service
 from utils.response import APIResponse
 
 user_router = APIRouter(prefix='/user')
+
 
 
 @user_router.post('/login')
@@ -18,6 +19,17 @@ async def login(
     用户登录接口
     """
     result = await user_service.login(login_data)
+    return APIResponse.success(data=result)
+
+
+@user_router.post('/refresh-token')
+async def refresh_token(
+        request: RefreshTokenRequest
+):
+    """
+    刷新 Token 接口
+    """
+    result = await user_service.refresh_token(request.refresh_token)
     return APIResponse.success(data=result)
 
 

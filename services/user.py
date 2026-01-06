@@ -44,10 +44,11 @@ class UserService(BaseService[User]):
             "scope": "user"
         }
         access_token = JWTUtil.create_token(data=token_payload)
+        refresh_token = JWTUtil.create_refresh_token(data=token_payload)
 
         # 4. 构造响应
         return UserLoginResponse(
-            token=TokenData(access_token=access_token),
+            token=TokenData(access_token=access_token, refresh_token=refresh_token),
             user=UserInfo(
                 id=user.id,
                 username=user.username,
@@ -57,6 +58,40 @@ class UserService(BaseService[User]):
                 user_identity=user.user_identity,
             )
         )
+
+    async def refresh_token(self, refresh_token: str) -> TokenData:
+        """
+        刷新 Token
+        """
+        # 1. 验证 Refresh Token
+        payload = JWTUtil.verify_token(refresh_token)
+        if not payload:
+            raise BusinessException(message="Invalid or expired refresh token", code=401)
+        
+        # 2. 获取用户 ID
+        user_id = payload.get("sub")
+        if not user_id:
+            raise BusinessException(message="Invalid token payload", code=401)
+            
+        # 3. 检查用户状态 (可选，但推荐)
+        user = await self.get(int(user_id))
+        if not user or user.user_status == 0:
+             raise BusinessException(message="User not found or disabled", code=401)
+
+        # 4. 生成新 Token
+        # 保持原有的 payload 数据
+        token_payload = {
+            "sub": str(user.id),
+            "username": user.username,
+            "scope": "user"
+        }
+        
+        new_access_token = JWTUtil.create_token(data=token_payload)
+        # 这里可以选择是否旋转 refresh_token，目前简单起见，只返回新的 access_token，refresh_token 保持不变
+        # 或者也生成新的 refresh_token
+        # new_refresh_token = JWTUtil.create_refresh_token(data=token_payload)
+        
+        return TokenData(access_token=new_access_token, refresh_token=refresh_token)
 
     async def uploader_ocr(self, user_id: int, side: str, file: UploadFile) -> OCRResponse:
         """

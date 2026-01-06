@@ -18,6 +18,7 @@ WHITE_LIST = [
     "/api/v1/user/register",
     "/api/v1/user/callback",
     "/api/v1/user/send-sms",
+    "/api/v1/user/refresh-token",
     "/ws/chat"
 ]
 
