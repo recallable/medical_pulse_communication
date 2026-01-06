@@ -49,6 +49,19 @@ async def get_current_user_id(request: Request) -> int:
     return int(user_id)
 
 
+async def get_current_user(request: Request) -> dict:
+    """
+    依赖项：获取当前登录用户信息
+    返回包含 user_id 的字典
+    """
+    user_id = getattr(request.state, "user_id", None)
+
+    if not user_id:
+        raise BusinessException(code=401, message="用户未登录或登录已过期")
+
+    return {"user_id": int(user_id)}
+
+
 async def validate_ws_token(
         websocket: WebSocket,
         token: str = Query(None)  # 从 URL 参数 ?token=xxx 获取

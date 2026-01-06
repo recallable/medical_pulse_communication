@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     dingtalk_client_secret: str = 'EtZi9mcq59x-C42nwMugfzLxHQe1TrTeTNFhV98rH1jlacnhX-ByIDKA7e2WW_Vk'
     baidu_ocr_app_key: str = 'XAyedW0rHJl6YjYQQ5IAf7KC'
     baidu_ocr_secret_key: str = 'XvC5eNswoMBE6vQfvBLJavxuygL0iy4Z'
+    # MongoDB配置
+    mongodb_url: str = f"mongodb://root:121518@localhost:27017/?authSource=admin"
+    mongodb_database: str = "medical_pulse_communication"
+    # RabbitMQ配置
+    rabbitmq_url: str = "amqp://admin:121518@localhost:5672//"
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property

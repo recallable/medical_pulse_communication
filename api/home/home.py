@@ -104,6 +104,6 @@ async def article_list(article_request: ArticleRequest):
         raise HTTPException(status_code=503, detail="Server busy, please try again later")
 
 
-@home_router.get('/medical-record-list')
+@home_router.post('/medical-record-list')
 async def medical_record_list(req: SearchRequest):
-    return await es.search(req)
+    return APIResponse.success(await es.search(req))
