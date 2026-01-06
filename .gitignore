@@ -11,7 +11,7 @@ __pycache__/
 media/
 static/
 *.http
-
+*.pem
 # Distribution / packaging
 .Python
 build/

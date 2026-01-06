@@ -19,9 +19,12 @@ WHITE_LIST = [
     "/api/v1/user/callback",
     "/api/v1/user/send-sms",
     "/api/v1/user/refresh-token",
-    "/ws/chat"
+    "/ws/chat",
 ]
 
+START_WITH_LIST = [
+    "/api/v1/order/notify/",
+]
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     """
@@ -40,7 +43,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         # 1. 检查是否在白名单中
         # 允许白名单完全匹配 或 前缀匹配 (例如 /docs, /openapi.json)
-        if any(path.startswith(white_path) for white_path in WHITE_LIST):
+        if any(path.startswith(white_path) for white_path in WHITE_LIST) or any(path.startswith(white_path) for white_path in START_WITH_LIST):
             return await call_next(request)
 
         if request.scope["type"] == "websocket":

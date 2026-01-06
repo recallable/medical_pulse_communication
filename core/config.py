@@ -29,6 +29,19 @@ class Settings(BaseSettings):
     mongodb_database: str = "medical_pulse_communication"
     # RabbitMQ配置
     rabbitmq_url: str = "amqp://admin:121518@localhost:5672//"
+    ali_pay_config: dict = {
+        'app_private_key_path': 'D:\\exploitation\\code\\python\\jy\\p5\\medical_pulse_communication\\alipay_private.pem',
+        'app_public_key_path': 'D:\\exploitation\\code\\python\\jy\\p5\\medical_pulse_communication\\alipay_public.pem',
+        'app_id': '9021000159604209',
+        'gateway': 'https://openapi-sandbox.dl.alipaydev.com/gateway.do',
+        'notify_url': 'https://releasible-maleah-unpresumptuously.ngrok-free.dev/api/v1/order/notify/alipay',
+        'return_url': 'http://127.0.0.1:5173/app/knowledge/bank',
+        'debug': True,
+        'sign_type': "RSA2",
+        'verbose': True,
+        'timeout': 5,
+    }
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property
