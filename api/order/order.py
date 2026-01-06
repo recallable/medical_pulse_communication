@@ -32,7 +32,7 @@ async def create_order(request: Request, order_in: OrderCreate):
     try:
         # 2. 获取策略并执行支付
         strategy = PaymentFactory.get_strategy(payment_method)
-        payment_result = await strategy.pay(order_id=order_id, amount=order_in.amount)
+        payment_result = await strategy.pay(order_id=order_id, amount=order_in.amount, user_id=request.state.user_id, course_id=order_in.course_id)
         
         # 3. 保存订单状态到 Redis (过期时间 24小时)
         redis = redis_client_manager.get_client()
