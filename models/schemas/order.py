@@ -1,12 +1,13 @@
 from pydantic import BaseModel, Field
 
 class OrderCreate(BaseModel):
-    product_id: int = Field(..., description="商品ID")
-    count: int = Field(..., description="数量")
+    payment_method: str = Field(..., description="支付方式")
+    use_grain: bool = Field(..., description="是否使用粮粒")
+    course_id: int = Field(..., description="课程ID")
     amount: float = Field(..., description="总金额")
 
 class OrderResponse(BaseModel):
     order_id: str = Field(..., description="订单ID")
     status: str = Field(..., description="状态")
-    product_id: int
+    course_id: int
     amount: float

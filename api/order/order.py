@@ -22,9 +22,10 @@ async def create_order(request: Request, order_in: OrderCreate):
     order_id = str(uuid.uuid4())
     
     data = {
+        "user_id": request.state.user_id,
         "order_id": order_id,
         "status": "created",
-        "product_id": order_in.product_id,
+        "course_id": order_in.course_id,
         "amount": order_in.amount
     }
     
