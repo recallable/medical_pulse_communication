@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Path
 
-from models import MedicalCourse
+from models import MedicalCourse, Order
 from models.schemas.course import MedicalCourseResponse, MedicalCourseRequest
 from utils.response import APIResponse
 
@@ -55,11 +55,13 @@ async def course_list(request: MedicalCourseRequest):
 async def course_detail(id: int = Path(..., description='课程ID')):
     if not id:
         return APIResponse.error(message='课程ID不能为空')
-    
+
     course = await MedicalCourse.get(id=id)
     if not course:
         return APIResponse.error(message='课程不存在')
-    
+
+    exist = await Order.filter(course_id=id).exists()
+
     course_detail = MedicalCourseResponse(
         id=course.id,
         course_code=course.course_code,
@@ -82,5 +84,5 @@ async def course_detail(id: int = Path(..., description='课程ID')):
         updated_time=course.updated_time,
         ext_info=course.ext_info,
     )
-    
-    return APIResponse.success(course_detail)
+
+    return APIResponse.success(data={'course_detail': course_detail, 'exist': exist})
