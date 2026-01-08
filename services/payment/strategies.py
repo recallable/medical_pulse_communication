@@ -15,6 +15,9 @@ class FreeStrategy(PaymentStrategy):
 
     async def pay(self, order_id: str, amount: float, **kwargs) -> PaymentResult:
         # 0元购或积分兑换，直接成功
+        await Order.create(order_no=order_id, user_id=kwargs.get('user_id'),
+                           course_id=kwargs.get('course_id'), original_price=amount,
+                           real_price=amount, payment_method="FREE", status="COMPLETED", )
         return PaymentResult(
             is_instant_success=True,
             status="COMPLETED",
