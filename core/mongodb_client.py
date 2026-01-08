@@ -29,6 +29,12 @@ class MongoDBClientManager:
         await user_behavior_collection.create_index("action_type")
         await user_behavior_collection.create_index("created_time")
         await user_behavior_collection.create_index([("user_id", 1), ("course_id", 1)])
+        
+        # 课程评价集合索引
+        course_comment_collection = self._db["course_comments"]
+        await course_comment_collection.create_index("course_id")
+        await course_comment_collection.create_index("created_at")
+        await course_comment_collection.create_index([("course_id", 1), ("created_at", -1)])
     
     async def close_client(self):
         """关闭MongoDB客户端"""
